@@ -7,7 +7,7 @@ module.exports = {
     FALLBACK_MESSAGE_OUTSIDE_GAME: `I can't help you with that.  I will come up with a number between 0 and 100 and you try to guess it by saying a number in that range. Would you like to play?`,
     GUESS_CORRECT_MESSAGE: "%s is correct! Would you like to play again?",
     LAUNCH_MESSAGE:
-      "Debug! Welcome to High Low guessing game. You have played %s times. Would you like to play?",
+      "Welcome to High Low guessing game. You have played %s times. Would you like to play?",
     TOO_HIGH_MESSAGE: "%s is too high.",
     TOO_HIGH_REPROMPT: "Try guessing a smaller number.",
     TOO_LOW_MESSAGE: "%s is too low.",
