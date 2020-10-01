@@ -5,37 +5,49 @@
 /* eslint-disable  func-names */
 /* eslint-disable  no-console */
 /* eslint-disable  no-restricted-syntax */
-const Alexa = require('ask-sdk');
-const i18n = require('i18next');
-const sprintf = require('i18next-sprintf-postprocessor');
+const Alexa = require("ask-sdk");
+const i18n = require("i18next");
+const sprintf = require("i18next-sprintf-postprocessor");
 const languageStrings = {
-  'en': require('./languageStrings')
-}
-const AWS = require('aws-sdk');
+  en: require("./languageStrings"),
+};
+const AWS = require("aws-sdk");
+const { getRandomSlots } = require("./constants");
 
 const LaunchRequest = {
   canHandle(handlerInput) {
     // launch requests as well as any new session, as games are not saved in progress, which makes
     // no one shots a reasonable idea except for help, and the welcome message provides some help.
-    return Alexa.isNewSession(handlerInput.requestEnvelope) 
-      || Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
+    return (
+      Alexa.isNewSession(handlerInput.requestEnvelope) ||
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "LaunchRequest"
+    );
   },
   async handle(handlerInput) {
     const { attributesManager } = handlerInput;
     const requestAttributes = attributesManager.getRequestAttributes();
-    const attributes = await attributesManager.getPersistentAttributes() || {};
-
-    if (Object.keys(attributes).length === 0) {
-      attributes.endedSessionCount = 0;
-      attributes.gamesPlayed = 0;
-      attributes.gameState = 'ENDED';
+    let attributes = {};
+    try {
+      attributes = (await attributesManager.getPersistentAttributes()) || {};
+    } catch (e) {
+      attributes = {
+        debug: true,
+      };
     }
+
+    attributes = {
+      // Initialize attributes for first open
+      coins: 100,
+      gameState: "LOBBY",
+      debug: false,
+      ...attributes,
+    };
 
     attributesManager.setSessionAttributes(attributes);
 
-    const gamesPlayed = attributes.gamesPlayed.toString()
-    const speechOutput = requestAttributes.t('LAUNCH_MESSAGE', gamesPlayed);
-    const reprompt = requestAttributes.t('CONTINUE_MESSAGE');
+    const gamesPlayed = attributes.gamesPlayed.toString();
+    const speechOutput = requestAttributes.t("LAUNCH_MESSAGE", gamesPlayed);
+    const reprompt = requestAttributes.t("LAUNCH_MESSAGE");
 
     return handlerInput.responseBuilder
       .speak(speechOutput)
@@ -46,40 +58,51 @@ const LaunchRequest = {
 
 const ExitHandler = {
   canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-      && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
-        || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      (Alexa.getIntentName(handlerInput.requestEnvelope) ===
+        "AMAZON.CancelIntent" ||
+        Alexa.getIntentName(handlerInput.requestEnvelope) ===
+          "AMAZON.StopIntent")
+    );
   },
   handle(handlerInput) {
     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
 
     return handlerInput.responseBuilder
-      .speak(requestAttributes.t('EXIT_MESSAGE'))
+      .speak(requestAttributes.t("EXIT_MESSAGE"))
       .getResponse();
   },
 };
 
 const SessionEndedRequest = {
   canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) ===
+      "SessionEndedRequest"
+    );
   },
   handle(handlerInput) {
-    console.log(`Session ended with reason: ${handlerInput.requestEnvelope.request.reason}`);
+    console.log(
+      `Session ended with reason: ${handlerInput.requestEnvelope.request.reason}`
+    );
     return handlerInput.responseBuilder.getResponse();
   },
 };
 
 const HelpIntent = {
   canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' 
-      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.HelpIntent"
+    );
   },
   handle(handlerInput) {
     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
 
     return handlerInput.responseBuilder
-      .speak(requestAttributes.t('HELP_MESSAGE'))
-      .reprompt(requestAttributes.t('HELP_REPROMPT'))
+      .speak(requestAttributes.t("HELP_MESSAGE"))
+      .reprompt(requestAttributes.t("HELP_MESSAGE"))
       .getResponse();
   },
 };
@@ -91,26 +114,30 @@ const YesIntent = {
     const { attributesManager } = handlerInput;
     const sessionAttributes = attributesManager.getSessionAttributes();
 
-    if (sessionAttributes.gameState &&
-      sessionAttributes.gameState === 'STARTED') {
+    if (
+      sessionAttributes.gameState &&
+      sessionAttributes.gameState === "PLAYING"
+    ) {
       isCurrentlyPlaying = true;
     }
 
-    return !isCurrentlyPlaying 
-      && Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' 
-      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent';
+    return (
+      // !isCurrentlyPlaying &&
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.YesIntent"
+    );
   },
   handle(handlerInput) {
     const { attributesManager } = handlerInput;
     const requestAttributes = attributesManager.getRequestAttributes();
     const sessionAttributes = attributesManager.getSessionAttributes();
 
-    sessionAttributes.gameState = 'STARTED';
-    sessionAttributes.guessNumber = Math.floor(Math.random() * 101);
+    sessionAttributes.gameState = "PLAYING";
+    sessionAttributes.curSlots = getRandomSlots();
 
     return handlerInput.responseBuilder
-      .speak(requestAttributes.t('YES_MESSAGE'))
-      .reprompt(requestAttributes.t('HELP_REPROMPT'))
+      .speak(requestAttributes.t("YES_MESSAGE"))
+      .reprompt(requestAttributes.t("HELP_MESSAGE"))
       .getResponse();
   },
 };
@@ -122,30 +149,34 @@ const NoIntent = {
     const { attributesManager } = handlerInput;
     const sessionAttributes = attributesManager.getSessionAttributes();
 
-    if (sessionAttributes.gameState &&
-      sessionAttributes.gameState === 'STARTED') {
+    if (
+      sessionAttributes.gameState &&
+      sessionAttributes.gameState === "PLAYING"
+    ) {
       isCurrentlyPlaying = true;
     }
 
-    return !isCurrentlyPlaying 
-      && Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' 
-      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent';
+    return (
+      // !isCurrentlyPlaying &&
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.NoIntent"
+    );
   },
   async handle(handlerInput) {
     const { attributesManager } = handlerInput;
     const requestAttributes = attributesManager.getRequestAttributes();
     const sessionAttributes = attributesManager.getSessionAttributes();
 
-    sessionAttributes.endedSessionCount += 1;
-    sessionAttributes.gameState = 'ENDED';
-    attributesManager.setPersistentAttributes(sessionAttributes);
+    sessionAttributes.gameState = "LOBBY";
 
-    await attributesManager.savePersistentAttributes();
+    try {
+      attributesManager.setPersistentAttributes(sessionAttributes);
+      await attributesManager.savePersistentAttributes();
+    } catch (e) {}
 
     return handlerInput.responseBuilder
-      .speak(requestAttributes.t('EXIT_MESSAGE'))
+      .speak(requestAttributes.t("EXIT_MESSAGE"))
       .getResponse();
-
   },
 };
 
@@ -157,59 +188,47 @@ const UnhandledIntent = {
     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
 
     return handlerInput.responseBuilder
-      .speak(requestAttributes.t('CONTINUE_MESSAGE'))
-      .reprompt(requestAttributes.t('CONTINUE_MESSAGE'))
+      .speak(requestAttributes.t("CONTINUE_MESSAGE"))
+      .reprompt(requestAttributes.t("CONTINUE_MESSAGE"))
       .getResponse();
   },
 };
 
-const NumberGuessIntent = {
+const SpinIntent = {
   canHandle(handlerInput) {
-    // handle numbers only during a game
+    // handle spinning only during a game?
     let isCurrentlyPlaying = false;
     const { attributesManager } = handlerInput;
     const sessionAttributes = attributesManager.getSessionAttributes();
 
-    if (sessionAttributes.gameState &&
-      sessionAttributes.gameState === 'STARTED') {
+    if (
+      sessionAttributes.gameState &&
+      sessionAttributes.gameState === "PLAYING"
+    ) {
       isCurrentlyPlaying = true;
     }
 
-    return isCurrentlyPlaying 
-      && Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' 
-      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'NumberGuessIntent';
+    return (
+      // isCurrentlyPlaying &&
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "SpinIntent"
+    );
   },
   async handle(handlerInput) {
     const { attributesManager } = handlerInput;
     const requestAttributes = attributesManager.getRequestAttributes();
     const sessionAttributes = attributesManager.getSessionAttributes();
 
-    const guessNum = parseInt(Alexa.getSlotValue(handlerInput.requestEnvelope, 'number'), 10);
-    const targetNum = sessionAttributes.guessNumber;
-    
-    if (guessNum > targetNum) {
-      return handlerInput.responseBuilder
-        .speak(requestAttributes.t('TOO_HIGH_MESSAGE', guessNum.toString()))
-        .reprompt(requestAttributes.t('TOO_HIGH_REPROMPT'))
-        .getResponse();
-    } else if (guessNum < targetNum) {
-      return handlerInput.responseBuilder
-        .speak(requestAttributes.t('TOO_LOW_MESSAGE', guessNum.toString()))
-        .reprompt(requestAttributes.t('TOO_LOW_REPROMPT'))
-        .getResponse();
-    } else if (guessNum === targetNum) {
-      sessionAttributes.gamesPlayed += 1;
-      sessionAttributes.gameState = 'ENDED';
-      attributesManager.setPersistentAttributes(sessionAttributes);
-      await attributesManager.savePersistentAttributes();
-      return handlerInput.responseBuilder
-        .speak(requestAttributes.t('GUESS_CORRECT_MESSAGE', guessNum.toString()))
-        .reprompt(requestAttributes.t('CONTINUE_MESSAGE'))
-        .getResponse();
-    }
+    const slots = sessionAttributes.curSlots;
+
     return handlerInput.responseBuilder
-      .speak(requestAttributes.t('FALLBACK_MESSAGE_DURING_GAME'))
-      .reprompt(requestAttributes.t('FALLBACK_REPROMPT_DURING_GAME'))
+      .speak(requestAttributes.t("SPIN_FEEDBACK", slots[0], slots[1], slots[2]))
+      .reprompt(requestAttributes.t("SPIN_FEEDBACK"))
+      .getResponse();
+
+    return handlerInput.responseBuilder
+      .speak(requestAttributes.t("FALLBACK_MESSAGE_DURING_GAME"))
+      .reprompt(requestAttributes.t("FALLBACK_MESSAGE_DURING_GAME"))
       .getResponse();
   },
 };
@@ -224,8 +243,8 @@ const ErrorHandler = {
     const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
 
     return handlerInput.responseBuilder
-      .speak(requestAttributes.t('ERROR_MESSAGE'))
-      .reprompt(requestAttributes.t('ERROR_MESSAGE'))
+      .speak(requestAttributes.t("ERROR_MESSAGE"))
+      .reprompt(requestAttributes.t("ERROR_MESSAGE"))
       .getResponse();
   },
 };
@@ -234,28 +253,35 @@ const FallbackHandler = {
   canHandle(handlerInput) {
     // handle fallback intent, yes and no when playing a game
     // for yes and no, will only get here if and not caught by the normal intent handler
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-      && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent' 
-      || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
-      || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent');
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      (Alexa.getIntentName(handlerInput.requestEnvelope) ===
+        "AMAZON.FallbackIntent" ||
+        Alexa.getIntentName(handlerInput.requestEnvelope) ===
+          "AMAZON.YesIntent" ||
+        Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.NoIntent")
+    );
   },
   handle(handlerInput) {
     const { attributesManager } = handlerInput;
     const requestAttributes = attributesManager.getRequestAttributes();
     const sessionAttributes = attributesManager.getSessionAttributes();
 
-    if (sessionAttributes.gameState && sessionAttributes.gameState === 'STARTED') {
+    if (
+      sessionAttributes.gameState &&
+      sessionAttributes.gameState === "PLAYING"
+    ) {
       // currently playing
       return handlerInput.responseBuilder
-        .speak(requestAttributes.t('FALLBACK_MESSAGE_DURING_GAME'))
-        .reprompt(requestAttributes.t('FALLBACK_REPROMPT_DURING_GAME'))
+        .speak(requestAttributes.t("FALLBACK_MESSAGE_DURING_GAME"))
+        .reprompt(requestAttributes.t("FALLBACK_MESSAGE_DURING_GAME"))
         .getResponse();
     }
 
     // not playing
     return handlerInput.responseBuilder
-      .speak(requestAttributes.t('FALLBACK_MESSAGE_OUTSIDE_GAME'))
-      .reprompt(requestAttributes.t('CONTINUE_MESSAGE'))
+      .speak(requestAttributes.t("FALLBACK_MESSAGE_OUTSIDE_GAME"))
+      .reprompt(requestAttributes.t("CONTINUE_MESSAGE"))
       .getResponse();
   },
 };
@@ -274,7 +300,7 @@ const LocalizationInterceptor = {
       }
       const value = i18n.t(args[0], {
         returnObjects: true,
-        postProcess: 'sprintf',
+        postProcess: "sprintf",
         sprintf: values,
       });
       if (Array.isArray(value)) {
@@ -290,12 +316,15 @@ const LocalizationInterceptor = {
 };
 
 function getPersistenceAdapter() {
-   // Determines persistence adapter to be used based on environment
-    const s3Adapter = require('ask-sdk-s3-persistence-adapter');
-    return new s3Adapter.S3PersistenceAdapter({
-      bucketName: process.env.S3_PERSISTENCE_BUCKET,
-      s3Client: new AWS.S3({apiVersion : 'latest', region: process.env.S3_PERSISTENCE_REGION})
-    });
+  // Determines persistence adapter to be used based on environment
+  const s3Adapter = require("ask-sdk-s3-persistence-adapter");
+  return new s3Adapter.S3PersistenceAdapter({
+    bucketName: process.env.S3_PERSISTENCE_BUCKET,
+    s3Client: new AWS.S3({
+      apiVersion: "latest",
+      region: process.env.S3_PERSISTENCE_REGION,
+    }),
+  });
 }
 
 const skillBuilder = Alexa.SkillBuilders.custom();
@@ -309,9 +338,9 @@ exports.handler = skillBuilder
     HelpIntent,
     YesIntent,
     NoIntent,
-    NumberGuessIntent,
+    SpinIntent,
     FallbackHandler,
-    UnhandledIntent,
+    UnhandledIntent
   )
   .addRequestInterceptors(LocalizationInterceptor)
   .addErrorHandlers(ErrorHandler)

@@ -2,6 +2,11 @@
   "interactionModel": {
     "languageModel": {
       "invocationName": "fruit machine",
+      "modelConfiguration": {
+        "fallbackIntentSensitivity": {
+          "level": "LOW"
+        }
+      },
       "intents": [
         {
           "name": "AMAZON.CancelIntent",
@@ -28,32 +33,16 @@
           "samples": []
         },
         {
-          "name": "NumberGuessIntent",
-          "slots": [
-            {
-              "name": "number",
-              "type": "AMAZON.NUMBER"
-            }
-          ],
-          "samples": [
-            "{number}",
-            "is it {number}",
-            "how about {number}",
-            "could be {number}"
-          ]
+          "name": "SpinIntent",
+          "slots": [],
+          "samples": ["insert coins", "start", "spin the machine", "spin"]
         },
         {
           "name": "AMAZON.NavigateHomeIntent",
           "samples": []
         }
       ],
-      "types": [],
-      "modelConfiguration": {
-        "fallbackIntentSensitivity": {
-          "level": "LOW"
-        }
-      }
+      "types": []
     }
-  },
-  "version": "2"
+  }
 }
