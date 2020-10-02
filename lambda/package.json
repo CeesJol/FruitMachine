@@ -1,7 +1,7 @@
 {
-  "name": "skill-sample-nodejs-highlowgame",
+  "name": "fruit-machine",
   "version": "2.6.0",
-  "description": "High-low number guessing game for Alexa (i18n)",
+  "description": "Fruit machine game for Alexa (i18n)",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,8 +11,11 @@
     "url": "git+https://github.com/alexa/skill-sample-nodejs-highlowgame.git"
   },
   "keywords": [
-    "Alexa",
+    "fruit",
+    "slot",
+    "machine",
     "game",
+    "coins",
     "skill"
   ],
   "author": "Amazon.com",

@@ -32,14 +32,13 @@
       "isAvailableWorldwide": true,
       "locales": {
         "en-US": {
-          "description": "Guess a number, and Alexa will tell you if you need to guess higher or lower. She will also tell you how many times you have played.",
+          "description": "Spin the machine and match fruits to win!",
           "examplePhrases": [
-            "Alexa open high low game",
-            "Alexa start high low game",
-            "Alexa ask high low game is it {number}"
+            "Alexa open fruit machine",
+            "Alexa start fruit machine"
           ],
           "name": "Fruit Machine",
-          "summary": "Guess a number, and Alexa will tell you if you need to guess higher or lower."
+          "summary": "Spin the machine and match fruits to win!"
         }
       },
       "testingInstructions": "Sample Testing Instructions."

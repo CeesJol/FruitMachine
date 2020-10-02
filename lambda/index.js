@@ -12,7 +12,12 @@ const languageStrings = {
   en: require("./languageStrings"),
 };
 const AWS = require("aws-sdk");
-const { getRandomSlots } = require("./constants");
+const {
+  getRandomSlots,
+  getVariation,
+  getReward,
+  COIN_INPUT,
+} = require("./constants");
 
 const LaunchRequest = {
   canHandle(handlerInput) {
@@ -45,8 +50,8 @@ const LaunchRequest = {
 
     attributesManager.setSessionAttributes(attributes);
 
-    const gamesPlayed = attributes.gamesPlayed.toString();
-    const speechOutput = requestAttributes.t("LAUNCH_MESSAGE", gamesPlayed);
+    const coins = attributes.coins.toString();
+    const speechOutput = requestAttributes.t("LAUNCH_MESSAGE", coins);
     const reprompt = requestAttributes.t("LAUNCH_MESSAGE");
 
     return handlerInput.responseBuilder
@@ -128,17 +133,7 @@ const YesIntent = {
     );
   },
   handle(handlerInput) {
-    const { attributesManager } = handlerInput;
-    const requestAttributes = attributesManager.getRequestAttributes();
-    const sessionAttributes = attributesManager.getSessionAttributes();
-
-    sessionAttributes.gameState = "PLAYING";
-    sessionAttributes.curSlots = getRandomSlots();
-
-    return handlerInput.responseBuilder
-      .speak(requestAttributes.t("YES_MESSAGE"))
-      .reprompt(requestAttributes.t("HELP_MESSAGE"))
-      .getResponse();
+    return spinHandler(handlerInput);
   },
 };
 
@@ -214,24 +209,79 @@ const SpinIntent = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === "SpinIntent"
     );
   },
-  async handle(handlerInput) {
-    const { attributesManager } = handlerInput;
-    const requestAttributes = attributesManager.getRequestAttributes();
-    const sessionAttributes = attributesManager.getSessionAttributes();
-
-    const slots = sessionAttributes.curSlots;
-
-    return handlerInput.responseBuilder
-      .speak(requestAttributes.t("SPIN_FEEDBACK", slots[0], slots[1], slots[2]))
-      .reprompt(requestAttributes.t("SPIN_FEEDBACK"))
-      .getResponse();
-
-    return handlerInput.responseBuilder
-      .speak(requestAttributes.t("FALLBACK_MESSAGE_DURING_GAME"))
-      .reprompt(requestAttributes.t("FALLBACK_MESSAGE_DURING_GAME"))
-      .getResponse();
+  handle(handlerInput) {
+    return spinHandler(handlerInput);
   },
 };
+
+async function spinHandler(handlerInput) {
+  const { attributesManager } = handlerInput;
+  const requestAttributes = attributesManager.getRequestAttributes();
+  const sessionAttributes = attributesManager.getSessionAttributes();
+
+  sessionAttributes.coins -= COIN_INPUT;
+  const slots = getRandomSlots();
+  // const slots = ["lemon", "lemon", "lemon"];
+  const reward = getReward(slots);
+
+  if (!slots || !reward) {
+    return handlerInput.responseBuilder
+      .speak(requestAttributes.t("FALLBACK_MESSAGE"))
+      .reprompt(requestAttributes.t("FALLBACK_MESSAGE"))
+      .getResponse();
+  }
+
+  if (reward.reward > 0) {
+    // User won
+    sessionAttributes.coins += reward.reward;
+    return handlerInput.responseBuilder
+      .speak(
+        requestAttributes.t(
+          getVariation("SPIN_MESSAGE_WIN_", 2),
+          slots[0],
+          slots[1],
+          slots[2],
+          reward.message,
+          reward.reward.toString(),
+          sessionAttributes.coins
+        )
+      )
+      .reprompt(
+        requestAttributes.t(
+          getVariation("SPIN_MESSAGE_WIN_", 2),
+          slots[0],
+          slots[1],
+          slots[2],
+          reward.message,
+          reward.reward.toString(),
+          sessionAttributes.coins
+        )
+      )
+      .getResponse();
+  } else {
+    // User lost
+    return handlerInput.responseBuilder
+      .speak(
+        requestAttributes.t(
+          getVariation("SPIN_MESSAGE_LOSE_", 2),
+          slots[0],
+          slots[1],
+          slots[2],
+          sessionAttributes.coins
+        )
+      )
+      .reprompt(
+        requestAttributes.t(
+          getVariation("SPIN_MESSAGE_LOSE_", 2),
+          slots[0],
+          slots[1],
+          slots[2],
+          sessionAttributes.coins
+        )
+      )
+      .getResponse();
+  }
+}
 
 const ErrorHandler = {
   canHandle() {
@@ -265,23 +315,11 @@ const FallbackHandler = {
   handle(handlerInput) {
     const { attributesManager } = handlerInput;
     const requestAttributes = attributesManager.getRequestAttributes();
-    const sessionAttributes = attributesManager.getSessionAttributes();
 
-    if (
-      sessionAttributes.gameState &&
-      sessionAttributes.gameState === "PLAYING"
-    ) {
-      // currently playing
-      return handlerInput.responseBuilder
-        .speak(requestAttributes.t("FALLBACK_MESSAGE_DURING_GAME"))
-        .reprompt(requestAttributes.t("FALLBACK_MESSAGE_DURING_GAME"))
-        .getResponse();
-    }
-
-    // not playing
+    // currently playing
     return handlerInput.responseBuilder
-      .speak(requestAttributes.t("FALLBACK_MESSAGE_OUTSIDE_GAME"))
-      .reprompt(requestAttributes.t("CONTINUE_MESSAGE"))
+      .speak(requestAttributes.t("FALLBACK_MESSAGE"))
+      .reprompt(requestAttributes.t("FALLBACK_MESSAGE"))
       .getResponse();
   },
 };
