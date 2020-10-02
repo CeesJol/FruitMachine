@@ -219,7 +219,6 @@ async function spinHandler(handlerInput) {
   const requestAttributes = attributesManager.getRequestAttributes();
   const sessionAttributes = attributesManager.getSessionAttributes();
 
-  sessionAttributes.coins -= COIN_INPUT;
   const slots = getRandomSlots();
   // const slots = ["lemon", "lemon", "lemon"];
   const reward = getReward(slots);
@@ -231,9 +230,15 @@ async function spinHandler(handlerInput) {
       .getResponse();
   }
 
+  sessionAttributes.coins += reward.reward - COIN_INPUT;
+
+  try {
+    attributesManager.setPersistentAttributes(sessionAttributes);
+    await attributesManager.savePersistentAttributes();
+  } catch (e) {}
+
   if (reward.reward > 0) {
     // User won
-    sessionAttributes.coins += reward.reward;
     return handlerInput.responseBuilder
       .speak(
         requestAttributes.t(
