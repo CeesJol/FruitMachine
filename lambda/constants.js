@@ -1,5 +1,6 @@
 const SLOTS = ["cherry", "plum", "orange", "lemon", "bar"];
 const COIN_INPUT = 5;
+const DAILY_COINS = 50;
 
 // Get random in range
 const getRandomRange = (min, max) => {
@@ -52,9 +53,28 @@ const getReward = (slots = ["", "", ""]) => {
   return reward;
 };
 
+/**
+ * Return a sloppy date format
+ */
+const getDate = () => {
+  const d = new Date();
+  return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+};
+
+/**
+ * Check if user opens skill on a new day
+ * This means they should get their daily reward
+ */
+const isNewDay = (date) => {
+  return date !== getDate();
+};
+
 module.exports = {
   COIN_INPUT,
+  DAILY_COINS,
   getRandomSlots,
   getReward,
   getVariation,
+  isNewDay,
+  getDate,
 };

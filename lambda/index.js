@@ -17,6 +17,9 @@ const {
   getVariation,
   getReward,
   COIN_INPUT,
+  DAILY_COINS,
+  isNewDay,
+  getDate,
 } = require("./constants");
 
 const LaunchRequest = {
@@ -37,7 +40,15 @@ const LaunchRequest = {
     } catch (e) {
       attributes = {
         debug: true,
+        coins: 1337,
       };
+    }
+
+    let firstDay = false;
+
+    if (typeof attributes.coins === "undefined") {
+      // First open, but not debug
+      firstDay = true;
     }
 
     attributes = {
@@ -45,18 +56,35 @@ const LaunchRequest = {
       coins: 100,
       gameState: "LOBBY",
       debug: false,
+      lastOpened: getDate(),
       ...attributes,
     };
 
+    let newDay = isNewDay(attributes.lastOpened);
+
+    // Set proper speech message
+    // newDay: user opens skill on a new day, gets reward
+    // firstDay: user opens skill for first time, give extra explanation
+    let speechMessage = "LAUNCH_MESSAGE";
+    if (newDay) {
+      attributes.coins += DAILY_COINS;
+      attributes.lastOpened = getDate();
+      speechMessage += "_NEW_DAY";
+    } else if (firstDay) {
+      speechMessage += "_FIRST_DAY";
+    }
+
+    // Set session and persistent attributes
     attributesManager.setSessionAttributes(attributes);
+    try {
+      attributesManager.setPersistentAttributes(sessionAttributes);
+      await attributesManager.savePersistentAttributes();
+    } catch (e) {}
 
     const coins = attributes.coins.toString();
-    const speechOutput = requestAttributes.t("LAUNCH_MESSAGE", coins);
-    const reprompt = requestAttributes.t("LAUNCH_MESSAGE");
-
     return handlerInput.responseBuilder
-      .speak(speechOutput)
-      .reprompt(reprompt)
+      .speak(requestAttributes.t(speechMessage, coins))
+      .reprompt(requestAttributes.t(speechMessage, coins))
       .getResponse();
   },
 };
@@ -218,6 +246,14 @@ async function spinHandler(handlerInput) {
   const { attributesManager } = handlerInput;
   const requestAttributes = attributesManager.getRequestAttributes();
   const sessionAttributes = attributesManager.getSessionAttributes();
+
+  if (sessionAttributes.coins < COIN_INPUT) {
+    // user can't afford to play
+    // no reprompt = quit the skill
+    return handlerInput.responseBuilder
+      .speak(requestAttributes.t("NOT_ENOUGH_COINS"))
+      .getResponse();
+  }
 
   const slots = getRandomSlots();
   // const slots = ["lemon", "lemon", "lemon"];
