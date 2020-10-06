@@ -14,7 +14,6 @@ const languageStrings = {
 const AWS = require("aws-sdk");
 const {
   getRandomSlots,
-  getVariation,
   getReward,
   COIN_INPUT,
   DAILY_COINS,
@@ -278,7 +277,7 @@ async function spinHandler(handlerInput) {
     return handlerInput.responseBuilder
       .speak(
         requestAttributes.t(
-          getVariation("SPIN_MESSAGE_WIN_", 2),
+          "SPIN_MESSAGE_WIN",
           slots[0],
           slots[1],
           slots[2],
@@ -289,7 +288,7 @@ async function spinHandler(handlerInput) {
       )
       .reprompt(
         requestAttributes.t(
-          getVariation("SPIN_MESSAGE_WIN_", 2),
+          "SPIN_MESSAGE_WIN",
           slots[0],
           slots[1],
           slots[2],
@@ -304,7 +303,7 @@ async function spinHandler(handlerInput) {
     return handlerInput.responseBuilder
       .speak(
         requestAttributes.t(
-          getVariation("SPIN_MESSAGE_LOSE_", 2),
+          "SPIN_MESSAGE_LOSE",
           slots[0],
           slots[1],
           slots[2],
@@ -313,7 +312,7 @@ async function spinHandler(handlerInput) {
       )
       .reprompt(
         requestAttributes.t(
-          getVariation("SPIN_MESSAGE_LOSE_", 2),
+          "SPIN_MESSAGE_LOSE",
           slots[0],
           slots[1],
           slots[2],

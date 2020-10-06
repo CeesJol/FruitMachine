@@ -33,30 +33,30 @@ module.exports = {
       "Say spin to insert 5 coins and spin the machine. If you make a combination, you win!",
     ERROR_MESSAGE: "Sorry, an error occurred.",
     YES_MESSAGE: "Great! Try saying a number to start the game.",
-    SPIN_MESSAGE_WIN_1: `
-			${SPIN_MESSAGE}
+    SPIN_MESSAGE_WIN: [
+      `${SPIN_MESSAGE}
 			<amazon:emotion name="excited" intensity="low">
 			You won with combination: %s! You win %s coins! 
 			</amazon:emotion>
 			You have %s coins left. Would you like to spin again?`,
-    SPIN_MESSAGE_WIN_2: `
-			${SPIN_MESSAGE}
+      `${SPIN_MESSAGE}
 			<amazon:emotion name="excited" intensity="low">
-			You spinned the winning combination %s and won %s coins! 
+			You spinned the winning combination %s, and won %s coins! 
 			</amazon:emotion>
 			You have %s coins left. Would you like to spin again?`,
-    SPIN_MESSAGE_LOSE_1: `
-			${SPIN_MESSAGE}
+    ],
+    SPIN_MESSAGE_LOSE: [
+      `${SPIN_MESSAGE}
 			<amazon:emotion name="disappointed" intensity="medium">
 			You lost! 
 			</amazon:emotion>
 			You have %s coins left. Would you like to spin again?`,
-    SPIN_MESSAGE_LOSE_2: `
-			${SPIN_MESSAGE}
+      `${SPIN_MESSAGE}
 			<amazon:emotion name="disappointed" intensity="low">
 			You lost, bringing you down to %s coins.
 			</amazon:emotion>
 			One more spin?`,
+    ],
     NOT_ENOUGH_COINS: `
 			<amazon:emotion name="disappointed" intensity="low">
 			You don't have enough coins to spin anymore.

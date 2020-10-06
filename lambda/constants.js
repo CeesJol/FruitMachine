@@ -7,10 +7,6 @@ const getRandomRange = (min, max) => {
   return Math.floor(Math.random() * (max - min) + min);
 };
 
-const getVariation = (base, variations) => {
-  return base + getRandomRange(1, 1 + variations);
-};
-
 const getRandomSlot = (start = 0) => {
   return SLOTS[getRandomRange(start, SLOTS.length)];
 };
@@ -74,7 +70,6 @@ module.exports = {
   DAILY_COINS,
   getRandomSlots,
   getReward,
-  getVariation,
   isNewDay,
   getDate,
 };
