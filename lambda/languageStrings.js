@@ -13,17 +13,17 @@ const SPIN_MESSAGE = `
 	%s. 
 	<break time="300ms"/>`;
 
+const STARTUP_AUDIO = `<audio src="https://kind-agnesi-0a5e10.netlify.app/slots2.mp3" />`;
+
 module.exports = {
   translation: {
     SKILL_NAME: "Fruit Machine",
     EXIT_MESSAGE: "Thanks for playing!",
     FALLBACK_MESSAGE: `I can't help you with that. Say spin to spin the machine.`,
-    LAUNCH_MESSAGE:
-      "Welcome to Fruit Machine. You have %s coins. Would you like to play?",
-    LAUNCH_MESSAGE_FIRST_DAY:
-      "Welcome to Fruit Machine. Say spin to insert 5 coins and spin the machine. If you make a combination, you win! You start with %s coins. Would you like to play?",
+    LAUNCH_MESSAGE: `${STARTUP_AUDIO} Welcome to Fruit Machine. You have %s coins. Would you like to play?`,
+    LAUNCH_MESSAGE_FIRST_DAY: `${STARTUP_AUDIO} Welcome to Fruit Machine. Say spin to insert 5 coins and spin the machine. If you make a combination, you win! You start with %s coins. Would you like to play?`,
     LAUNCH_MESSAGE_NEW_DAY: `
-			Welcome back to Fruit Machine. 
+			${STARTUP_AUDIO}  Welcome back to Fruit Machine. 
 			<amazon:emotion name="excited" intensity="low">
 			Your daily reward is ${DAILY_COINS} coins! 
 			</amazon:emotion>
